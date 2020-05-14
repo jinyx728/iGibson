@@ -694,5 +694,6 @@ class Locobot(LocomotorRobot):
 
 class DexHandRobot(LocomotorRobot):
     def __init__(self, config):
+
         
 
