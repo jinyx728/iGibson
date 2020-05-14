@@ -54,7 +54,8 @@ class BaseRobot:
         Load the robot model into pybullet
         :return: body id in pybullet
         """
-        flags = p.URDF_USE_MATERIAL_COLORS_FROM_MTL
+        # flags = p.URDF_USE_MATERIAL_COLORS_FROM_MTL
+        flags = 0
         if self.self_collision:
             flags = flags | p.URDF_USE_SELF_COLLISION | p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT
 

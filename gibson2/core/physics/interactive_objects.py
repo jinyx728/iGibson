@@ -218,8 +218,7 @@ class InteractiveObj(Object):
         self.scale = scale
 
     def _load(self):
-        body_id = p.loadURDF(self.filename, globalScaling=self.scale,
-                             flags=p.URDF_USE_MATERIAL_COLORS_FROM_MTL)
+        body_id = p.loadURDF(self.filename, globalScaling=self.scale)
         self.mass = p.getDynamicsInfo(body_id, -1)[0]
 
         return body_id

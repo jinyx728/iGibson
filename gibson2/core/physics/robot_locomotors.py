@@ -694,6 +694,41 @@ class Locobot(LocomotorRobot):
 
 class DexHandRobot(LocomotorRobot):
     def __init__(self, config):
+        self.config = config
+        LocomotorRobot.__init__(self,
+                                "shadowhand/inmoov_shadow_hand_v2_3.urdf",
+                                action_dim=31,
+                                scale=config.get("robot_scale", 1.0),
+                                is_discrete=config.get("is_discrete", False),
+                                control="position")
+        p.setGravity(0, 0, 0)
 
-        
+    def set_up_continuous_action_space(self):
+        self.action_bound = 2
+        self.action_high = np.array([self.action_bound] * self.action_dim)
+        self.action_low = -self.action_high
+        self.action_space = gym.spaces.Box(self.action_low, self.action_high, dtype=np.float64)
+    
+    def set_up_discrete_action_space(self):
+        assert False, "DexHandRobot does not support discrete actions"
 
+    def get_palm_position(self):
+        return self.parts['rh_palm'].get_position()
+
+    def load(self):
+        ids = super(DexHandRobot, self).load()
+        robot_id = self.robot_ids[0]
+        # use constraint for better controlling of robot base with dynamics
+        self.hand_constraint = p.createConstraint(robot_id, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], self.get_position(), p.getQuaternionFromEuler([0,0,0]), self.get_orientation())
+        return ids
+
+    def apply_action(self, action):
+        real_action = self.policy_action_to_robot_action(action)
+        if self.control == 'position':
+            for n, j in enumerate(self.ordered_joints):
+                j.set_motor_position(action[n])
+            handPos = np.array(action[-7:-4])
+            handOrientation = np.array(action[-4:])
+            p.changeConstraint(self.hand_constraint, jointChildPivot=handPos, jointChildFrameOrientation=handOrientation, maxForce=500)
+        else:
+            assert False, "DexHandRobot does not support control methods other than position control"

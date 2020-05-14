@@ -31,4 +31,4 @@ done
 
 echo Starting VNC server on port $VNC_PORT with password $VNC_PASSWORD
 echo please run \"python simulator_example.py\" once you see the docker command prompt:
-docker run --gpus all -ti -p $VNC_PORT:5900 -e VNC_PASSWORD=$VNC_PASSWORD --rm igibson/igibson-gui:latest bash
+docker run --gpus all -ti -p $VNC_PORT:5900 -e VNC_PASSWORD=$VNC_PASSWORD -v /data/yxjin/robot/iGibson:/data/yxjin/robot/iGibson --rm igibson/igibson-gui:latest bash
