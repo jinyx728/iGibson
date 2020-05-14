@@ -692,3 +692,7 @@ class Locobot(LocomotorRobot):
     def get_end_effector_position(self):
         return self.parts['gripper_link'].get_position()
 
+class DexHandRobot(LocomotorRobot):
+    def __init__(self, config):
+        
+
