@@ -701,7 +701,6 @@ class DexHandRobot(LocomotorRobot):
                                 scale=config.get("robot_scale", 1.0),
                                 is_discrete=config.get("is_discrete", False),
                                 control="position")
-        p.setGravity(0, 0, 0)
 
     def set_up_continuous_action_space(self):
         self.action_bound = 2

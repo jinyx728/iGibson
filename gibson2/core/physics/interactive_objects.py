@@ -218,7 +218,7 @@ class InteractiveObj(Object):
         self.scale = scale
 
     def _load(self):
-        body_id = p.loadURDF(self.filename, globalScaling=self.scale)
+        body_id = p.loadURDF(self.filename, globalScaling=self.scale, useFixedBase=1, flags=p.URDF_USE_SELF_COLLISION)
         self.mass = p.getDynamicsInfo(body_id, -1)[0]
 
         return body_id

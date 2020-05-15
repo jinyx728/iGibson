@@ -6,6 +6,8 @@ import gibson2
 import os
 from gibson2.core.render.profiler import Profiler
 import logging
+import pybullet as p 
+from PIL import Image
 
 #logging.getLogger().setLevel(logging.DEBUG) #To increase the level of logging
 
@@ -15,13 +17,20 @@ def main():
     env = HandDrawerEnv(config_file=config_filename, mode='gui')
     for j in range(1000):
         env.reset()
-        # for i in range(100):
-        #     with Profiler('Environment action step'):
-        #         action = env.action_space.sample()
-        #         state, reward, done, info = env.step(action)
-        #         if done:
-        #             logging.info("Episode finished after {} timesteps".format(i + 1))
-        #             break
+        for i in range(100):
+            with Profiler('Environment action step'):
+                action = env.action_space.sample()
+                action[0:24] = 0
+                action[-7] = 0.05
+                action[-6] = 0
+                action[-5] = 1.05
+                action[-4:] = p.getQuaternionFromEuler([-np.pi/2,0,np.pi])
+                state, reward, done, info = env.step(action) 
+                print(reward)
+
+                if done:
+                    logging.info("Episode finished after {} timesteps".format(i + 1))
+                    break
 
 if __name__ == "__main__":
     main()
