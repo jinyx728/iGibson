@@ -228,6 +228,22 @@ class HandDrawerEnv(BaseEnv):
             seg = np.clip(seg * 255.0 / self.num_object_classes, 0.0, 1.0)
         return seg
 
+    def get_external_camera(self):
+        """
+        pybullet external view rendering
+        """
+        # external camera position
+        self._view_matrix = [0.5708255171775818, -0.6403688788414001, 0.5138930082321167, 0.0, 0.821071445941925, 0.4451974034309387, -0.3572688400745392, 0.0, -0.0, 0.6258810758590698, 0.7799185514450073, 0.0, -1.0701078176498413, -0.883043646812439, -1.8267910480499268, 1.0]
+        self._projection_matrix = [0.7499999403953552, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0000200271606445, -1.0, 0.0, 0.0, -0.02000020071864128, 0.0]
+        self._external_width = 1024
+        self._external_height = 768
+
+        (_, _, px, _, _) = p.getCameraImage(width=self._external_width, height=self._external_height, renderer=p.ER_BULLET_HARDWARE_OPENGL, viewMatrix=self._view_matrix, projectionMatrix=self._projection_matrix)
+        rgb_array = np.array(px, dtype=np.uint8)
+        rgb_array = np.reshape(np.array(px), (self._external_height, self._external_width, -1))
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+
     def save_rgb_image(self, path):
         rgb = self.get_rgb()
         Image.fromarray((rgb * 255).astype(np.uint8)).save(path)
@@ -243,6 +259,10 @@ class HandDrawerEnv(BaseEnv):
     def save_normal_image(self, path):
         normal = self.get_normal()
         Image.fromarray((normal * 255).astype(np.uint8)).save(path)
+
+    def save_external_image(self, path):
+        external = self.get_external_camera()
+        Image.fromarray(external).save(path)
 
     def load_task_setup(self):
         self.max_pull_dist = 0.5
