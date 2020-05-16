@@ -26,7 +26,10 @@ def main():
                 action[-5] = 1.05
                 action[-4:] = p.getQuaternionFromEuler([-np.pi/2,0,np.pi])
                 state, reward, done, info = env.step(action) 
-                print(reward)
+                env.save_seg_image('seg/'+str(j*100+i)+'.jpg')
+                env.save_rgb_image('rgb/'+str(j*100+i)+'.jpg')
+                env.save_depth_image('depth/'+str(j*100+i)+'.jpg')
+                env.save_normal_image('normal/'+str(j*100+i)+'.jpg')
 
                 if done:
                     logging.info("Episode finished after {} timesteps".format(i + 1))

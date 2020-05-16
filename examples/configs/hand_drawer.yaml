@@ -24,14 +24,3 @@ fisheye: false
 image_width: 640
 image_height: 480
 vertical_fov: 45
-# depth
-depth_low: 0.8
-depth_high: 3.5
-
-# sensor noise
-depth_noise_rate: 0.0
-scan_noise_rate: 0.0
-
-# visual objects
-visual_object_at_initial_target_pos: true
-target_visual_object_visible_to_agent: false

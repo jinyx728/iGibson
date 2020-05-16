@@ -2,6 +2,7 @@ from gibson2.envs.base_env import BaseEnv
 from gibson2.utils.utils import parse_config
 from gibson2.core.simulator import Simulator
 from gibson2.core.physics.interactive_objects import InteractiveObj
+from gibson2.core.render.mesh_renderer.mesh_renderer_cpu import quat2rotmat, xyz2mat, xyzw2wxyz
 from collections import OrderedDict
 from PIL import Image
 import gibson2
@@ -34,7 +35,8 @@ class HandDrawerEnv(BaseEnv):
         if model_id is not None:
             self.config['model_id'] = model_id
 
-        self.num_object_classes = 3
+        # class: stadium=0, robot=1, drawer=2, handle=3
+        self.num_object_classes = 4
         self.automatic_reset = automatic_reset
         self.mode = mode
         self.action_timestep = action_timestep
@@ -60,11 +62,80 @@ class HandDrawerEnv(BaseEnv):
         self.drawer_start_orn = p.getQuaternionFromEuler([0,0,-np.pi/2])
         self.handle_idx = 3
         self.drawer = InteractiveObj(os.path.join(gibson2.assets_path, 'models', 'drawer', 'drawer_one_sided_handle.urdf'))
-        self.drawer_id = self.simulator.import_articulated_object(self.drawer)
+        self.import_drawer_handle()
         self.drawer.set_position_orientation(self.drawer_start_pos, self.drawer_start_orn)
         self.handle_init_pos = p.getLinkState(self.drawer_id, self.handle_idx)[0][1]
         self.simulator.sync()
         self._state_id = p.saveState()
+
+    """
+    modify import_articulated_object() in simulator.py to
+    render drawer and drawer handle separately for semantic inforamtion
+    """
+    def import_drawer_handle(self):
+        self.drawer_id = self.drawer.load()
+
+        # render drawer
+        class_id = self.simulator.next_class_id
+        self.simulator.next_class_id += 1
+        visual_objects = []
+        link_ids = []
+        poses_rot = []
+        poses_trans = []
+        for shape in p.getVisualShapeData(self.drawer_id):
+            id, link_id, type, dimensions, filename, rel_pos, rel_orn, color = shape[:8]
+            link_name = p.getJointInfo(self.drawer_id, link_id)[12]
+            if link_name != b'handle_left' and link_name != b'handle_right' and link_name != b'handle_grip':
+                filename = os.path.join(gibson2.assets_path, 'models/mjcf_primitives/cube.obj')
+                self.simulator.renderer.load_object(filename,
+                                          transform_orn=rel_orn,
+                                          transform_pos=rel_pos,
+                                          input_kd=color[:3],
+                                          scale=np.array(dimensions))
+                visual_objects.append(len(self.simulator.renderer.visual_objects) - 1)
+                link_ids.append(link_id)
+                _, _, _, _, pos, orn = p.getLinkState(id, link_id)
+                poses_rot.append(np.ascontiguousarray(quat2rotmat(xyzw2wxyz(orn))))
+                poses_trans.append(np.ascontiguousarray(xyz2mat(pos)))
+        self.simulator.renderer.add_instance_group(object_ids=visual_objects,
+                                         link_ids=link_ids,
+                                         pybullet_uuid=self.drawer_id,
+                                         class_id=class_id,
+                                         poses_rot=poses_rot,
+                                         poses_trans=poses_trans,
+                                         dynamic=True,
+                                         robot=None)
+
+        # render drawer handle
+        class_id = self.simulator.next_class_id
+        self.simulator.next_class_id += 1
+        visual_objects = []
+        link_ids = []
+        poses_rot = []
+        poses_trans = []
+        for shape in p.getVisualShapeData(self.drawer_id):
+            id, link_id, type, dimensions, filename, rel_pos, rel_orn, color = shape[:8]
+            link_name = p.getJointInfo(self.drawer_id, link_id)[12]
+            if link_name == b'handle_left' or link_name == b'handle_right' or link_name == b'handle_grip':
+                filename = os.path.join(gibson2.assets_path, 'models/mjcf_primitives/cube.obj')
+                self.simulator.renderer.load_object(filename,
+                                          transform_orn=rel_orn,
+                                          transform_pos=rel_pos,
+                                          input_kd=color[:3],
+                                          scale=np.array(dimensions))
+                visual_objects.append(len(self.simulator.renderer.visual_objects) - 1)
+                link_ids.append(link_id)
+                _, _, _, _, pos, orn = p.getLinkState(id, link_id)
+                poses_rot.append(np.ascontiguousarray(quat2rotmat(xyzw2wxyz(orn))))
+                poses_trans.append(np.ascontiguousarray(xyz2mat(pos)))
+        self.simulator.renderer.add_instance_group(object_ids=visual_objects,
+                                         link_ids=link_ids,
+                                         pybullet_uuid=self.drawer_id,
+                                         class_id=class_id,
+                                         poses_rot=poses_rot,
+                                         poses_trans=poses_trans,
+                                         dynamic=True,
+                                         robot=None)
 
     def set_robot_pos_orn(self, robot, pos, orn):
         robot.set_position_orientation(pos, orn)
@@ -152,7 +223,6 @@ class HandDrawerEnv(BaseEnv):
         """
         :return: semantic segmentation mask, normalized to [0.0, 1.0]
         """
-        # TODO: correct segmentation
         seg = self.simulator.renderer.render_robot_cameras(modes='seg')[0][:, :, 0:1]
         if self.num_object_classes is not None:
             seg = np.clip(seg * 255.0 / self.num_object_classes, 0.0, 1.0)
