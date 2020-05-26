@@ -15,6 +15,7 @@ dev/transfer.c
 *.jpg
 *.png
 *.bmp
+*.mp4
 *.bak
 *.zip
 .*.swp
@@ -73,3 +74,5 @@ gibson/assets
 notebook
 build
 dist
+
+drq/runs
