@@ -14,10 +14,10 @@ from PIL import Image
 def main():
     config_filename = os.path.join(os.path.dirname(gibson2.__file__),
                                    '../examples/configs/hand_drawer.yaml')
-    env = HandDrawerEnv(config_file=config_filename, mode='gui')
+    env = HandDrawerEnv(config_file=config_filename, mode='headless')
     for j in range(1000):
         env.reset()
-        for i in range(1000):
+        for i in range(100):
             with Profiler('Environment action step'):
                 action = env.action_space.sample()
                 action[0:24] = 0
@@ -26,10 +26,10 @@ def main():
                 action[-5] = 1.05 + np.sin(i/15)
                 action[-4:] = p.getQuaternionFromEuler([-np.pi/2,0,np.pi])
                 state, reward, done, info = env.step(action) 
-                env.save_seg_image('seg/'+str(j*100+i)+'.jpg')
-                env.save_rgb_image('rgb/'+str(j*100+i)+'.jpg')
-                env.save_depth_image('depth/'+str(j*100+i)+'.jpg')
-                env.save_normal_image('normal/'+str(j*100+i)+'.jpg')
+                env.save_seg_image_external('seg/'+str(j*100+i)+'.jpg')
+                # env.save_rgb_image('rgb/'+str(j*100+i)+'.jpg')
+                env.save_depth_image_external('depth/'+str(j*100+i)+'.jpg')
+                # env.save_normal_image('normal/'+str(j*100+i)+'.jpg')
                 env.save_external_image('external/'+str(j*100+i)+'.jpg')
 
                 if done:

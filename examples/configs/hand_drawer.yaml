@@ -16,11 +16,11 @@ discount_factor: 0.99
 max_step: 1000
 
 # sensor spec
-output: [rgb, depth, seg, normal]
+output: [depth, seg]
 # image
 # ASUS Xtion PRO LIVE
 # https://www.asus.com/us/3D-Sensor/Xtion_PRO_LIVE
 fisheye: false
-image_width: 640
-image_height: 480
+image_width: 256
+image_height: 256
 vertical_fov: 45

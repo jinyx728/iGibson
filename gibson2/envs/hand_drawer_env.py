@@ -35,6 +35,11 @@ class HandDrawerEnv(BaseEnv):
         if model_id is not None:
             self.config['model_id'] = model_id
 
+        # gibson external camera
+        self.initial_pos = np.array([0, 1.3, 4])
+        self.initial_view_direction = np.array([0, 0, -1])
+        self.up = np.array([0, 1, 0])
+
         # class: stadium=0, robot=1, drawer=2, handle=3
         self.num_object_classes = 4
         self.automatic_reset = automatic_reset
@@ -143,7 +148,8 @@ class HandDrawerEnv(BaseEnv):
     def get_drawer_handle_pos(self):
         return np.array(p.getLinkState(self.drawer_id, self.handle_idx)[0])
 
-    def get_state(self):
+    # legacy get state from gibson
+    def get_state_legacy(self):
         state = OrderedDict()
         if 'rgb' in self.output:
             state['rgb'] = self.get_rgb()
@@ -154,6 +160,16 @@ class HandDrawerEnv(BaseEnv):
         if 'seg' in self.output:
             state['seg'] = self.get_seg()
         return state
+
+    def get_state(self):
+        state = np.empty((0,self.image_height,self.image_width), dtype=np.uint8)
+        if 'depth' in self.output:
+            depth = self.get_depth_external()[...,None].transpose(2,0,1)
+            state = np.concatenate((state, depth), axis=0)
+        if 'seg' in self.output:
+            seg = self.get_seg_external()[...,None].transpose(2,0,1)
+            state = np.concatenate((state, seg), axis=0)
+        return state.astype(np.uint8)
     
     def get_reward(self):
         handle_center = self.get_drawer_handle_pos()
@@ -182,12 +198,12 @@ class HandDrawerEnv(BaseEnv):
     def get_termination(self, info={}):
         done = False
 
-        if self.is_goal_pulled() and self.reach_completed:
+        # if self.is_goal_pulled() and self.reach_completed:
+        #     done = True
+        #     info['success'] = True
+        if self.current_step >= self.max_step:
             done = True
-            info['success'] = True
-        elif self.current_step >= self.max_step:
-            done = True
-            info['success'] = False
+            # info['success'] = False
         
         if done:
             info['episode_length'] = self.current_step
@@ -228,11 +244,41 @@ class HandDrawerEnv(BaseEnv):
             seg = np.clip(seg * 255.0 / self.num_object_classes, 0.0, 1.0)
         return seg
 
+    def get_depth_external(self):
+        self.simulator.renderer.set_camera(self.initial_pos, self.initial_pos+self.initial_view_direction, self.up)
+        depth = -self.simulator.renderer.render(modes=('3d'))[0][:, :, 2:3]
+        depth[depth < self.depth_low] = 0.0
+        depth[depth > self.depth_high] = 0.0
+        depth /= self.depth_high
+        return (depth * 255).astype(np.uint8)[:,:,0]
+    
+    def get_seg_external(self):
+        self.simulator.renderer.set_camera(self.initial_pos, self.initial_pos+self.initial_view_direction, self.up)
+        seg = self.simulator.renderer.render(modes='seg')[0][:, :, 0:1]
+        if self.num_object_classes is not None:
+            seg = seg * 255
+            # only mask handle
+            seg[seg < 3.1] = 0
+            seg = np.clip(seg / self.num_object_classes, 0.0, 1.0)
+        return (seg * 255).astype(np.uint8)[:,:,0]
+
     def get_external_camera(self):
         """
         pybullet external view rendering
         """
-        # external camera position
+        # pybullet external camera position
+        self._view_matrix = [0.5708255171775818, -0.6403688788414001, 0.5138930082321167, 0.0, 0.821071445941925, 0.4451974034309387, -0.3572688400745392, 0.0, -0.0, 0.6258810758590698, 0.7799185514450073, 0.0, -1.0701078176498413, -0.883043646812439, -1.8267910480499268, 1.0]
+        self._projection_matrix = [0.7499999403953552, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0000200271606445, -1.0, 0.0, 0.0, -0.02000020071864128, 0.0]
+        self._external_width = 1024
+        self._external_height = 768
+
+        (_, _, px, _, _) = p.getCameraImage(width=self._external_width, height=self._external_height, renderer=p.ER_BULLET_HARDWARE_OPENGL, viewMatrix=self._view_matrix, projectionMatrix=self._projection_matrix)
+        rgb_array = np.array(px, dtype=np.uint8)
+        rgb_array = np.reshape(np.array(px), (self._external_height, self._external_width, -1))
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
+
+    def render(self, mode='rgb_array'):
         self._view_matrix = [0.5708255171775818, -0.6403688788414001, 0.5138930082321167, 0.0, 0.821071445941925, 0.4451974034309387, -0.3572688400745392, 0.0, -0.0, 0.6258810758590698, 0.7799185514450073, 0.0, -1.0701078176498413, -0.883043646812439, -1.8267910480499268, 1.0]
         self._projection_matrix = [0.7499999403953552, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0000200271606445, -1.0, 0.0, 0.0, -0.02000020071864128, 0.0]
         self._external_width = 1024
@@ -264,13 +310,24 @@ class HandDrawerEnv(BaseEnv):
         external = self.get_external_camera()
         Image.fromarray(external).save(path)
 
+    def save_depth_image_external(self, path):
+        depth = self.get_depth_external()
+        Image.fromarray(depth).save(path)
+
+    def save_seg_image_external(self, path):
+        seg = self.get_seg_external()
+        Image.fromarray(seg).save(path)
+
     def load_task_setup(self):
         self.max_pull_dist = 0.5
         self.reach_reward_factor = 1.0
         self.pull_reward_factor = 1000.0
         self.max_step = self.config.get('max_step', 500)
-    
-    def load_observation_space(self):
+        # interface for drq
+        self._max_episode_steps = self.max_step
+            
+    # legacy observation space from gibson
+    def load_observation_space_legacy(self):
         self.output = self.config['output']
         self.image_width = self.config.get('image_width', 128)
         self.image_height = self.config.get('image_height', 128)
@@ -304,6 +361,22 @@ class HandDrawerEnv(BaseEnv):
 
         self.observation_space = gym.spaces.Dict(observation_space)
 
+    # observation space for drq
+    def load_observation_space(self):
+        self.output = self.config['output']
+        self.image_width = self.config.get('image_width', 128)
+        self.image_height = self.config.get('image_height', 128)
+        self.depth_low = self.config.get('depth_low', 0.5)
+        self.depth_high = self.config.get('depth_high', 5.0)
+        channels = 0
+        if 'rgb' in self.output: channels += 3
+        if 'depth' in self.output: channels += 1
+        if 'seg' in self.output: channels += 1
+        if 'normal' in self.output: channels += 3
+        shape = [channels, self.image_height, self.image_width]
+        self.observation_space = gym.spaces.Box(
+            low=0, high=255, shape=shape, dtype=np.uint8
+        )
     
     def load_action_space(self):
         self.action_space = self.robots[0].action_space
