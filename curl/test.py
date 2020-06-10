@@ -159,16 +159,7 @@ def main():
     if args.seed == -1: 
         args.__dict__["seed"] = np.random.randint(1,1000000)
     utils.set_seed_everywhere(args.seed)
-    # env = dmc2gym.make(
-    #     domain_name=args.domain_name,
-    #     task_name=args.task_name,
-    #     seed=args.seed,
-    #     visualize_reward=False,
-    #     from_pixels=(args.encoder_type == 'pixel'),
-    #     height=args.pre_transform_image_size,
-    #     width=args.pre_transform_image_size,
-    #     frame_skip=args.action_repeat
-    # )
+
     gibson_config_filename = os.path.join(os.path.dirname(gibson2.__file__),
                                    '../examples/configs/hand_drawer.yaml')
     env = HandDrawerEnv(config_file=gibson_config_filename, mode='headless')
@@ -204,8 +195,6 @@ def main():
     if args.encoder_type == 'pixel':
         obs_shape = (2*args.frame_stack, args.image_size, args.image_size)
         pre_aug_obs_shape = (2*args.frame_stack,args.pre_transform_image_size,args.pre_transform_image_size)
-        # obs_shape = (3*args.frame_stack, args.image_size, args.image_size)
-        # pre_aug_obs_shape = (3*args.frame_stack,args.pre_transform_image_size,args.pre_transform_image_size)
     else:
         obs_shape = env.observation_space.shape
         pre_aug_obs_shape = obs_shape
@@ -228,61 +217,7 @@ def main():
 
     L = Logger(args.work_dir, use_tb=args.save_tb)
 
-    episode, episode_reward, done = 0, 0, True
-    start_time = time.time()
-
-    for step in range(args.num_train_steps):
-        # evaluate agent periodically
-
-        if step % args.eval_freq == 0:
-            L.log('eval/episode', episode, step)
-            evaluate(env, agent, video, args.num_eval_episodes, L, step,args)
-            if args.save_model:
-                agent.save_curl(model_dir, step)
-            if args.save_buffer:
-                replay_buffer.save(buffer_dir)
-
-        if done:
-            if step > 0:
-                if step % args.log_interval == 0:
-                    L.log('train/duration', time.time() - start_time, step)
-                    L.dump(step)
-                start_time = time.time()
-            if step % args.log_interval == 0:
-                L.log('train/episode_reward', episode_reward, step)
-
-            obs = env.reset()
-            done = False
-            episode_reward = 0
-            episode_step = 0
-            episode += 1
-            if step % args.log_interval == 0:
-                L.log('train/episode', episode, step)
-
-        # sample action for data collection
-        if step < args.init_steps:
-            action = env.action_space.sample()
-        else:
-            with utils.eval_mode(agent):
-                action = agent.sample_action(obs)
-
-        # run training update
-        if step >= args.init_steps:
-            num_updates = 1 
-            for _ in range(num_updates):
-                agent.update(replay_buffer, L, step)
-
-        next_obs, reward, done, _ = env.step(action)
-
-        # allow infinit bootstrap
-        done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(
-            done
-        )
-        episode_reward += reward
-        replay_buffer.add(obs, action, reward, next_obs, done_bool)
-
-        obs = next_obs
-        episode_step += 1
+    evaluate(env, agent, video, args.num_eval_episodes, L, step,args)
 
 
 if __name__ == '__main__':

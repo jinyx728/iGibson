@@ -19,6 +19,7 @@ dev/transfer.c
 *.bak
 *.zip
 .*.swp
+*.pt
 
 
 # vscode
@@ -76,3 +77,4 @@ build
 dist
 
 drq/runs
+curl/tmp
