@@ -65,7 +65,7 @@ class HandDrawerEnv(BaseEnv):
                                    auto_sync=False)
         self.simulator_loop = int(self.action_timestep / self.simulator.timestep)
         self.load()
-        self.hand_start_pos = [0.05, 0, 1.05]
+        self.hand_start_pos = [0.05, 1, 1.05]
         self.hand_start_orn = p.getQuaternionFromEuler([-np.pi/2,0,np.pi])
         self.set_robot_pos_orn(self.robots[0], self.hand_start_pos, self.hand_start_orn)
 
@@ -399,7 +399,7 @@ class HandDrawerEnv(BaseEnv):
     def load_task_setup(self):
         self.max_pull_dist = 0.5
         self.reach_reward_factor = 1.0
-        self.pull_reward_factor = 1000.0
+        self.pull_reward_factor = 1.0
         self.max_step = self.config.get('max_step', 500)
         # interface for drq
         self._max_episode_steps = self.max_step
@@ -493,7 +493,7 @@ class HandDrawerEnv(BaseEnv):
 
         state = self.get_state()
         info = {}
-        reward = self.get_reward_new()
+        reward = self.get_reward()
         done, info = self.get_termination()
 
         if done and self.automatic_reset:

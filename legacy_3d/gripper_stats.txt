@@ -1,0 +1,13 @@
+joint:
+0 right_endpoint
+1 r_gripper_l_finger_joint
+2 r_gripper_l_finger_tip_joint
+3 r_gripper_r_finger_joint
+4 r_gripper_r_finger_tip_joint
+
+link:
+0 right_gripper
+1 r_gripper_l_finger
+2 r_gripper_l_finger_tip
+3 r_gripper_r_finger
+4 r_gripper_r_finger_tip

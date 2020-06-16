@@ -1,0 +1,76 @@
+hand joint id -> name:
+0 r_elbow_roll_joint   
+1 r_wrist_roll_joint   NO USE IN RL
+2 rh_WRJ2
+3 rh_WRJ1
+4 rh_FFJ4
+5 rh_FFJ3
+6 rh_FFJ2
+7 rh_FFJ1
+8 rh_FFtip  NO USE IN RL
+9 rh_MFJ4
+10 rh_MFJ3
+11 rh_MFJ2
+12 rh_MFJ1
+13 rh_MFtip  NO USE IN RL
+14 rh_RFJ4
+15 rh_RFJ3
+16 rh_RFJ2
+17 rh_RFJ1
+18 rh_RFtip  NO USE IN RL
+19 rh_LFJ5   NO USE IN RL
+20 rh_LFJ4
+21 rh_LFJ3
+22 rh_LFJ2
+23 rh_LFJ1
+24 rh_LFtip  NO USE IN RL
+25 rh_THJ5
+26 rh_THJ4
+27 rh_THJ3
+28 rh_THJ2
+29 rh_THJ1
+30 rh_thtip  NO USE IN RL
+
+hand link id -> name:
+0 r_forearm_link
+1 r_hand_link
+2 rh_wrist
+3 rh_palm
+4 rh_ffknuckle
+5 rh_ffproximal
+6 rh_ffmiddle
+7 rh_ffdistal
+8 rh_fftip
+9 rh_mfknuckle
+10 rh_mfproximal
+11 rh_mfmiddle
+12 rh_mfdistal
+13 rh_mftip
+14 rh_rfknuckle
+15 rh_rfproximal
+16 rh_rfmiddle
+17 rh_rfdistal
+18 rh_rftip
+19 rh_lfmetacarpal
+20 rh_lfknuckle
+21 rh_lfproximal
+22 rh_lfmiddle
+23 rh_lfdistal
+24 rh_lftip
+25 rh_thbase
+26 rh_thproximal
+27 rh_thhub
+28 rh_thmiddle
+29 rh_thdistal
+30 rh_thtip
+
+drawer link id -> name:
+0 drawer
+1 handle_left
+2 handle_right
+3 handle_grip
+4 left_wall
+5 right_wall
+6 bottom_wall
+7 top_wall
+8 back_wall
