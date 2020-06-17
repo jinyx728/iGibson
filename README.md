@@ -11,3 +11,14 @@ Almost all files are the same as the original iGibson repository despite some ad
 
 The `legacy_3d` folder in the root directory is my previous attempts of opening drawers using robot arm/free gripper/dexterous hand, with 3D observation instead of robot vision. One important file is `hand_drawer_open_env_new.py` where an environment with a dexterous hand and a drawer is implemented. The environment follows the OpenAI Gym API. We can use `train_policy.py` to train a MLP network with parallel sampling, and `render_policy.py` to render a trained policy. Using the hyperparameters in the code, a decent policy can be trained, but feel free to try others. Other environments like `gripper_drawer_open_env.py` and `sawyer_drawer_open_env.py` can also be used but they are deprecated and training convergence is not guaranteed.
 
+### Dexterous Hand Env in iGibson
+
+Two main files that define this environment are:
+
+- `gibson2/envs/hand_drawer_env.py`: define the environment in OpenAI Gym style.
+- `gibson2/core/physics/robot_locomotors.py`: the `DexHandRobot` class defines the dexterous hand as well as APIs about it.
+
+Other subtle code changes can be found in the commit log. In `examples/demo` folder, we can use `hand_drawer_example.py` to test the environment.
+
+### CURL/DrQ
+
